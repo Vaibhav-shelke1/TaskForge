@@ -21,6 +21,8 @@ export interface ILink {
   url: string;
 }
 
+export type PaymentStatus = 'pending' | 'paid';
+
 export interface ITask {
   _id: string;
   title: string;
@@ -36,6 +38,7 @@ export interface ITask {
   links: ILink[];
   attachments: string[];
   totalLoggedHours: number;
+  paymentStatus: PaymentStatus;
   createdAt: string;
   updatedAt: string;
 }

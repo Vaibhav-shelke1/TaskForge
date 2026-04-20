@@ -5,7 +5,7 @@ import { jwtVerify } from 'jose';
 const getSecret = () =>
   new TextEncoder().encode(process.env.JWT_SECRET || 'fallback-dev-secret-32-chars-min!!');
 
-const PUBLIC_PATHS = ['/login', '/register', '/api/auth/login', '/api/auth/register'];
+const PUBLIC_PATHS = ['/login', '/register', '/api/auth/login', '/api/auth/register', '/api/auth/token-login'];
 
 function isPublic(pathname: string): boolean {
   return PUBLIC_PATHS.some((p) => pathname.startsWith(p));

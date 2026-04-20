@@ -19,6 +19,7 @@ export interface ITaskDocument extends Document {
   links: ILinkDoc[];
   attachments: string[];
   totalLoggedHours: number;
+  paymentStatus: 'pending' | 'paid';
   createdAt: Date;
   updatedAt: Date;
 }
@@ -40,6 +41,7 @@ const TaskSchema = new Schema<ITaskDocument>(
     links: [LinkSchema],
     attachments: [{ type: String }],
     totalLoggedHours: { type: Number, default: 0, min: 0 },
+    paymentStatus: { type: String, enum: ['pending', 'paid'], default: 'pending' },
   },
   { timestamps: true }
 );
