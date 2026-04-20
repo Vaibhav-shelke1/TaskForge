@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import {
   Clock, ExternalLink, Tag, Send, Edit2, Trash2, AlertTriangle,
+  CheckCircle2, CircleDollarSign, CalendarClock,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ITask, ITimeLog, IComment } from '@/types';
@@ -10,6 +11,7 @@ import {
   formatDate, formatHours, getBudgetPercentage,
   getBudgetStatus, getBudgetBarColor, getPriorityColor,
   getStatusColor, getSourceColor, cn,
+  getDueStatus, getDueBadgeStyle, formatDueLabel,
 } from '@/lib/utils';
 import apiClient from '@/lib/apiClient';
 import { useAuthStore } from '@/store/authStore';
@@ -25,18 +27,37 @@ interface TaskDetailProps {
   onDelete: () => void;
   onLogTime: () => void;
   onCommentAdded: (comment: IComment) => void;
+  onPaymentUpdate: (status: 'pending' | 'paid') => void;
 }
 
 export default function TaskDetail({
-  task, timeLogs, comments, onEdit, onDelete, onLogTime, onCommentAdded,
+  task, timeLogs, comments, onEdit, onDelete, onLogTime, onCommentAdded, onPaymentUpdate,
 }: TaskDetailProps) {
   const { user } = useAuthStore();
   const [comment, setComment] = useState('');
   const [posting, setPosting] = useState(false);
+  const [paymentLoading, setPaymentLoading] = useState(false);
 
   const budgetPct = getBudgetPercentage(task.totalLoggedHours, task.budgetHours);
   const budgetStatus = getBudgetStatus(task.totalLoggedHours, task.budgetHours);
   const client = typeof task.clientId === 'object' ? task.clientId : null;
+  const dueStatus = getDueStatus(task.dueDate, task.status);
+
+  const togglePayment = async () => {
+    const next = task.paymentStatus === 'paid' ? 'pending' : 'paid';
+    setPaymentLoading(true);
+    try {
+      const res = await apiClient.patch(`/tasks/${task._id}/payment`, { paymentStatus: next });
+      if (res.data.success) {
+        onPaymentUpdate(next);
+        toast.success(next === 'paid' ? 'Payment marked as paid' : 'Payment marked as pending');
+      }
+    } catch {
+      toast.error('Failed to update payment');
+    } finally {
+      setPaymentLoading(false);
+    }
+  };
 
   const postComment = async () => {
     if (!comment.trim()) return;
@@ -105,6 +126,18 @@ export default function TaskDetail({
             <Clock className="w-3.5 h-3.5" />
             Created {formatDate(task.createdAt)}
           </span>
+          {task.dueDate && dueStatus && (
+            <span className={cn('flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[11px] font-medium', getDueBadgeStyle(dueStatus))}>
+              <CalendarClock className="w-3.5 h-3.5" />
+              {formatDueLabel(task.dueDate, dueStatus)}
+            </span>
+          )}
+          {task.dueDate && !dueStatus && (
+            <span className="flex items-center gap-1.5 text-slate-500">
+              <CalendarClock className="w-3.5 h-3.5" />
+              Due {formatDate(task.dueDate)}
+            </span>
+          )}
         </div>
       </Card>
 
@@ -147,6 +180,38 @@ export default function TaskDetail({
           </Button>
         )}
       </Card>
+
+      {/* Payment Status */}
+      {task.isBillable && (
+        <Card className={task.paymentStatus === 'paid' ? 'border-emerald-500/20' : 'border-amber-500/20'}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              {task.paymentStatus === 'paid' ? (
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+              ) : (
+                <CircleDollarSign className="w-4 h-4 text-amber-400" />
+              )}
+              <div>
+                <h3 className="text-sm font-semibold text-white">Payment</h3>
+                <p className={`text-xs mt-0.5 ${task.paymentStatus === 'paid' ? 'text-emerald-400' : 'text-amber-400'}`}>
+                  {task.paymentStatus === 'paid' ? 'Payment received' : 'Payment pending'}
+                </p>
+              </div>
+            </div>
+            <Button
+              size="sm"
+              variant={task.paymentStatus === 'paid' ? 'ghost' : 'primary'}
+              loading={paymentLoading}
+              onClick={togglePayment}
+              icon={task.paymentStatus === 'paid'
+                ? <CircleDollarSign className="w-3.5 h-3.5" />
+                : <CheckCircle2 className="w-3.5 h-3.5" />}
+            >
+              {task.paymentStatus === 'paid' ? 'Mark Pending' : 'Mark as Paid'}
+            </Button>
+          </div>
+        </Card>
+      )}
 
       {/* Links */}
       {task.links && task.links.length > 0 && (

@@ -2,13 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Zap, Mail, Lock, Eye, EyeOff, Key } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, Key } from 'lucide-react';
 import toast from 'react-hot-toast';
 import apiClient from '@/lib/apiClient';
 import { useAuthStore } from '@/store/authStore';
 import { IUser } from '@/types';
 import Button from '@/components/ui/Button';
 import Input from '@/components/ui/Input';
+import AppLogo from '@/components/ui/AppLogo';
 
 type Tab = 'password' | 'token';
 
@@ -70,20 +71,21 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="max-w-md mx-auto">
+    <div className="w-full max-w-sm mx-auto">
       {/* Logo */}
-      <div className="flex items-center justify-center gap-3 mb-8">
-        <div className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center shadow-xl shadow-indigo-600/30">
-          <Zap className="w-6 h-6 text-white" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold text-white">TrackForge</h1>
-          <p className="text-xs text-slate-500">Task & Time Tracking</p>
-        </div>
+      <div className="flex justify-center mb-8">
+        <AppLogo size="lg" subtitle="Forge Your Workflow" />
       </div>
 
       {/* Card */}
-      <div className="bg-white/[0.04] border border-white/[0.08] rounded-2xl overflow-hidden shadow-2xl">
+      <div
+        className="rounded-2xl overflow-hidden shadow-2xl"
+        style={{
+          background: 'linear-gradient(160deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.03) 100%)',
+          border: '1px solid rgba(124,58,237,0.2)',
+          boxShadow: '0 8px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06)',
+        }}
+      >
         {/* Tab Switch */}
         <div className="flex border-b border-white/[0.06]">
           {([
@@ -95,9 +97,10 @@ export default function LoginPage() {
               onClick={() => setTab(id)}
               className={`flex-1 flex items-center justify-center gap-2 py-3.5 text-sm font-medium transition-all duration-200 ${
                 tab === id
-                  ? 'text-white border-b-2 border-indigo-500 bg-indigo-500/5'
+                  ? 'text-white border-b-2 border-violet-500'
                   : 'text-slate-500 hover:text-slate-300'
               }`}
+              style={tab === id ? { background: 'rgba(124,58,237,0.07)' } : {}}
             >
               <Icon className="w-3.5 h-3.5" />
               {label}
@@ -105,8 +108,8 @@ export default function LoginPage() {
           ))}
         </div>
 
-        <div className="p-8">
-          {/* ── Password Login ── */}
+        <div className="p-7">
+          {/* Password Login */}
           {tab === 'password' && (
             <>
               <div className="mb-6">
@@ -151,7 +154,7 @@ export default function LoginPage() {
             </>
           )}
 
-          {/* ── Token Login ── */}
+          {/* Token Login */}
           {tab === 'token' && (
             <>
               <div className="mb-6">
@@ -175,7 +178,7 @@ export default function LoginPage() {
                       autoComplete="off"
                       autoCorrect="off"
                       spellCheck={false}
-                      className="w-full bg-white/[0.04] border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-500 font-mono focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/20 transition-all"
+                      className="w-full bg-white/[0.04] border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-500 font-mono focus:outline-none focus:border-violet-500 focus:ring-1 focus:ring-violet-500/20 transition-all"
                     />
                   </div>
                   <p className="mt-1.5 text-xs text-slate-600">
@@ -193,9 +196,12 @@ export default function LoginPage() {
                 </Button>
               </form>
 
-              <div className="mt-5 p-3 bg-indigo-500/5 border border-indigo-500/15 rounded-xl">
+              <div
+                className="mt-5 p-3 rounded-xl"
+                style={{ background: 'rgba(124,58,237,0.06)', border: '1px solid rgba(124,58,237,0.15)' }}
+              >
                 <p className="text-xs text-slate-400 leading-relaxed">
-                  <span className="text-indigo-300 font-medium">Don&apos;t have a token?</span>{' '}
+                  <span className="text-violet-300 font-medium">Don&apos;t have a token?</span>{' '}
                   Contact your developer to generate one from your client profile.
                 </p>
               </div>
@@ -203,7 +209,6 @@ export default function LoginPage() {
           )}
         </div>
       </div>
-
     </div>
   );
 }

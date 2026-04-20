@@ -22,7 +22,13 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ success: false, error: 'Task not found' }, { status: 404 });
     }
 
-    if (authUser.role === 'client' && task.clientId.toString() !== authUser.userId) {
+    // clientId is populated (User document) — extract _id for the ownership check
+    const taskClientId =
+      task.clientId && typeof task.clientId === 'object' && '_id' in (task.clientId as object)
+        ? (task.clientId as { _id: { toString(): string } })._id.toString()
+        : String(task.clientId);
+
+    if (authUser.role === 'client' && taskClientId !== authUser.userId) {
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }
 
@@ -55,6 +61,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ success: false, error: 'Task not found' }, { status: 404 });
     }
 
+    // clientId is NOT populated here — it's a raw ObjectId
     if (authUser.role === 'client' && task.clientId.toString() !== authUser.userId) {
       return NextResponse.json({ success: false, error: 'Forbidden' }, { status: 403 });
     }
@@ -68,11 +75,12 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     } else {
       const {
         title, description, priority, status, budgetHours,
-        estimatedHours, source, isBillable, links,
+        estimatedHours, source, isBillable, links, dueDate,
       } = body;
       Object.assign(task, {
         title, description, priority, status, budgetHours,
         estimatedHours, source, isBillable, links,
+        dueDate: dueDate || undefined,
       });
     }
 

@@ -2,13 +2,14 @@
 
 import Link from 'next/link';
 import {
-  Clock, AlertTriangle, Tag, ExternalLink,
+  Clock, AlertTriangle, Tag, ExternalLink, CheckCircle2, CircleDollarSign, CalendarClock,
 } from 'lucide-react';
 import { ITask } from '@/types';
 import {
   cn, formatDate, formatHours,
   getBudgetPercentage, getBudgetStatus, getBudgetBarColor,
   getPriorityColor, getStatusColor, getSourceColor,
+  getDueStatus, getDueBadgeStyle, formatDueLabel,
 } from '@/lib/utils';
 import Badge from '../ui/Badge';
 
@@ -21,6 +22,7 @@ export default function TaskCard({ task, showClient = false }: TaskCardProps) {
   const budgetPct = getBudgetPercentage(task.totalLoggedHours, task.budgetHours);
   const budgetStatus = getBudgetStatus(task.totalLoggedHours, task.budgetHours);
   const client = typeof task.clientId === 'object' ? task.clientId : null;
+  const dueStatus = getDueStatus(task.dueDate, task.status);
 
   return (
     <Link
@@ -112,9 +114,30 @@ export default function TaskCard({ task, showClient = false }: TaskCardProps) {
         )}
       </div>
 
+      {/* Due Date Badge */}
+      {dueStatus && task.dueDate && (
+        <div className={cn('inline-flex items-center gap-1.5 text-[10px] font-medium rounded-full px-2.5 py-1 mb-2', getDueBadgeStyle(dueStatus))}>
+          <CalendarClock className="w-3 h-3" />
+          {formatDueLabel(task.dueDate, dueStatus)}
+        </div>
+      )}
+
       {/* Footer */}
       <div className="flex items-center justify-between pt-2 border-t border-white/[0.05]">
-        <span className="text-[11px] text-slate-600">{formatDate(task.createdAt)}</span>
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] text-slate-600">{formatDate(task.createdAt)}</span>
+          {task.isBillable && (
+            task.paymentStatus === 'paid' ? (
+              <span className="inline-flex items-center gap-1 text-[10px] font-medium text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 rounded-full px-2 py-0.5">
+                <CheckCircle2 className="w-2.5 h-2.5" /> Paid
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 text-[10px] font-medium text-amber-400 bg-amber-400/10 border border-amber-400/20 rounded-full px-2 py-0.5">
+                <CircleDollarSign className="w-2.5 h-2.5" /> Pending
+              </span>
+            )
+          )}
+        </div>
         {showClient && client && (
           <div className="flex items-center gap-1 text-[11px] text-slate-500">
             <Tag className="w-3 h-3" />

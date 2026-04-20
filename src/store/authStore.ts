@@ -5,8 +5,10 @@ import { IUser } from '@/types';
 interface AuthStore {
   user: IUser | null;
   isLoading: boolean;
+  hasFetched: boolean;
   setUser: (user: IUser | null) => void;
   setLoading: (loading: boolean) => void;
+  setHasFetched: (v: boolean) => void;
   logout: () => void;
 }
 
@@ -15,9 +17,11 @@ export const useAuthStore = create<AuthStore>()(
     (set) => ({
       user: null,
       isLoading: false,
-      setUser: (user) => set({ user }),
+      hasFetched: false,
+      setUser: (user) => set({ user, hasFetched: true }),
       setLoading: (isLoading) => set({ isLoading }),
-      logout: () => set({ user: null }),
+      setHasFetched: (hasFetched) => set({ hasFetched }),
+      logout: () => set({ user: null, hasFetched: false }),
     }),
     {
       name: 'trackforge-auth',

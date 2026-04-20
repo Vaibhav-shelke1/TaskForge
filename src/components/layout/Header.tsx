@@ -1,35 +1,27 @@
 'use client';
 
-import { Bell, Search, Zap } from 'lucide-react';
+import { Bell } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { getInitials } from '@/lib/utils';
+import AppLogo from '@/components/ui/AppLogo';
 
-interface HeaderProps {
-  title?: string;
-}
-
-export default function Header({ title }: HeaderProps) {
+export default function Header() {
   const { user } = useAuthStore();
 
   return (
-    <header className="lg:hidden sticky top-0 z-30 bg-[#080c1a]/80 backdrop-blur-md border-b border-white/[0.06] px-4 py-3">
+    <header className="lg:hidden sticky top-0 z-30 border-b border-white/[0.06] px-4 py-3"
+      style={{ background: 'rgba(6,8,26,0.85)', backdropFilter: 'blur(12px)' }}>
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center">
-            <Zap className="w-4 h-4 text-white" />
-          </div>
-          {title ? (
-            <h1 className="text-base font-semibold text-white">{title}</h1>
-          ) : (
-            <span className="text-base font-bold text-white">TrackForge</span>
-          )}
-        </div>
+        <AppLogo size="sm" showText={true} />
         <div className="flex items-center gap-2">
           <button className="p-2 text-slate-400 hover:text-white hover:bg-white/[0.06] rounded-lg transition-colors">
             <Bell className="w-4 h-4" />
           </button>
-          <div className="w-8 h-8 rounded-lg bg-indigo-600/30 border border-indigo-500/30 flex items-center justify-center">
-            <span className="text-xs font-semibold text-indigo-300">
+          <div
+            className="w-8 h-8 rounded-lg flex items-center justify-center"
+            style={{ background: 'linear-gradient(135deg, rgba(124,58,237,0.3), rgba(79,70,229,0.2))', border: '1px solid rgba(124,58,237,0.3)' }}
+          >
+            <span className="text-xs font-semibold text-violet-300">
               {user ? getInitials(user.name) : '??'}
             </span>
           </div>

@@ -45,7 +45,8 @@ export async function GET(request: NextRequest) {
       .populate('taskId', 'title clientId isBillable budgetHours totalLoggedHours')
       .populate('developerId', 'name email')
       .sort({ date: -1 })
-      .limit(limit);
+      .limit(limit)
+      .lean();
 
     return NextResponse.json({ success: true, data: logs, total: logs.length });
   } catch (error) {

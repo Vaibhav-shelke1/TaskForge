@@ -17,7 +17,8 @@ export async function GET(request: NextRequest) {
     const logs = await ActivityLog.find({ userId: authUser.userId })
       .populate('userId', 'name email')
       .sort({ createdAt: -1 })
-      .limit(limit);
+      .limit(limit)
+      .lean();
 
     return NextResponse.json({ success: true, data: logs });
   } catch (error) {

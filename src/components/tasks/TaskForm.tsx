@@ -34,6 +34,7 @@ export default function TaskForm({
     status: 'todo',
     budgetHours: '',
     estimatedHours: '',
+    dueDate: '',
     clientId: defaultClientId ?? '',
     source: 'internal',
     isBillable: true,
@@ -57,6 +58,7 @@ export default function TaskForm({
         status: editTask.status,
         budgetHours: String(editTask.budgetHours),
         estimatedHours: String(editTask.estimatedHours ?? ''),
+        dueDate: editTask.dueDate ? editTask.dueDate.slice(0, 10) : '',
         clientId: typeof editTask.clientId === 'object' ? editTask.clientId._id : editTask.clientId,
         source: editTask.source,
         isBillable: editTask.isBillable,
@@ -65,7 +67,7 @@ export default function TaskForm({
     } else {
       setForm({
         title: '', description: '', priority: 'medium', status: 'todo',
-        budgetHours: '', estimatedHours: '',
+        budgetHours: '', estimatedHours: '', dueDate: '',
         clientId: defaultClientId ?? (user?.role === 'client' ? user._id : ''),
         source: 'internal', isBillable: true, links: [],
       });
@@ -98,6 +100,7 @@ export default function TaskForm({
         ...form,
         budgetHours: parseFloat(form.budgetHours),
         estimatedHours: form.estimatedHours ? parseFloat(form.estimatedHours) : undefined,
+        dueDate: form.dueDate || undefined,
         links: form.links.filter((l) => l.url),
       };
 
@@ -184,6 +187,13 @@ export default function TaskForm({
             placeholder="Optional"
           />
         </div>
+
+        <Input
+          label="Due Date"
+          type="date"
+          value={form.dueDate}
+          onChange={(e) => setForm((f) => ({ ...f, dueDate: e.target.value }))}
+        />
 
         {user?.role === 'developer' && (
           <div className="grid grid-cols-2 gap-3">

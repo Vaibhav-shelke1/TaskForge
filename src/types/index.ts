@@ -10,6 +10,12 @@ export interface IUser {
   role: UserRole;
   company?: string;
   avatar?: string;
+  bio?: string;
+  linkedin?: string;
+  github?: string;
+  website?: string;
+  paypalEmail?: string;
+  phone?: string;
   clientToken?: string;
   clientTokenActive?: boolean;
   clientTokenGeneratedAt?: string;
@@ -39,6 +45,7 @@ export interface ITask {
   attachments: string[];
   totalLoggedHours: number;
   paymentStatus: PaymentStatus;
+  dueDate?: string;
   createdAt: string;
   updatedAt: string;
 }

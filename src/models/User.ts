@@ -8,6 +8,12 @@ export interface IUserDocument extends Document {
   role: 'developer' | 'client';
   company?: string;
   avatar?: string;
+  bio?: string;
+  linkedin?: string;
+  github?: string;
+  website?: string;
+  paypalEmail?: string;
+  phone?: string;
   clientToken?: string;
   clientTokenActive?: boolean;
   clientTokenGeneratedAt?: Date;
@@ -24,6 +30,12 @@ const UserSchema = new Schema<IUserDocument>(
     role: { type: String, enum: ['developer', 'client'], default: 'client' },
     company: { type: String, trim: true },
     avatar: { type: String },
+    bio: { type: String, trim: true },
+    linkedin: { type: String, trim: true },
+    github: { type: String, trim: true },
+    website: { type: String, trim: true },
+    paypalEmail: { type: String, trim: true, lowercase: true },
+    phone: { type: String, trim: true },
     clientToken: { type: String, unique: true, sparse: true },
     clientTokenActive: { type: Boolean, default: false },
     clientTokenGeneratedAt: { type: Date },

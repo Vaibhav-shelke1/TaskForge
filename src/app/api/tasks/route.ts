@@ -37,7 +37,8 @@ export async function GET(request: NextRequest) {
     const tasks = await Task.find(query)
       .populate('clientId', 'name email company')
       .populate('createdBy', 'name email')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
     return NextResponse.json({ success: true, data: tasks, total: tasks.length });
   } catch (error) {
@@ -57,7 +58,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const {
       title, description, priority, status, budgetHours,
-      estimatedHours, clientId, source, isBillable, links,
+      estimatedHours, clientId, source, isBillable, links, dueDate,
     } = body;
 
     if (!title || !clientId || budgetHours === undefined) {
@@ -73,6 +74,7 @@ export async function POST(request: NextRequest) {
     const task = await Task.create({
       title, description, priority, status, budgetHours, estimatedHours,
       clientId: effectiveClientId, createdBy: authUser.userId, source, isBillable, links,
+      dueDate: dueDate || undefined,
     });
 
     await ActivityLog.create({

@@ -14,7 +14,8 @@ export async function GET(request: NextRequest) {
     await connectDB();
     const clients = await User.find({ role: 'client' })
       .select('-password')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
     return NextResponse.json({ success: true, data: clients, total: clients.length });
   } catch (error) {

@@ -20,6 +20,7 @@ export interface ITaskDocument extends Document {
   attachments: string[];
   totalLoggedHours: number;
   paymentStatus: 'pending' | 'paid';
+  dueDate?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -42,6 +43,7 @@ const TaskSchema = new Schema<ITaskDocument>(
     attachments: [{ type: String }],
     totalLoggedHours: { type: Number, default: 0, min: 0 },
     paymentStatus: { type: String, enum: ['pending', 'paid'], default: 'pending' },
+    dueDate: { type: Date },
   },
   { timestamps: true }
 );

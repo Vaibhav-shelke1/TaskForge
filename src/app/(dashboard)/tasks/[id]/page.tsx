@@ -77,6 +77,7 @@ export default function TaskDetailPage() {
         onDelete={() => setShowDeleteModal(true)}
         onLogTime={() => setShowLogForm(true)}
         onCommentAdded={(c) => setComments((prev) => [c, ...prev])}
+        onPaymentUpdate={(status) => setTask((prev) => prev ? { ...prev, paymentStatus: status } : prev)}
       />
 
       <TaskForm
