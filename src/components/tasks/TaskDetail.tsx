@@ -37,11 +37,29 @@ export default function TaskDetail({
   const [comment, setComment] = useState('');
   const [posting, setPosting] = useState(false);
   const [paymentLoading, setPaymentLoading] = useState(false);
+  const [currentStatus, setCurrentStatus] = useState(task.status);
+  const [statusUpdating, setStatusUpdating] = useState(false);
 
   const budgetPct = getBudgetPercentage(task.totalLoggedHours, task.budgetHours);
   const budgetStatus = getBudgetStatus(task.totalLoggedHours, task.budgetHours);
   const client = typeof task.clientId === 'object' ? task.clientId : null;
   const dueStatus = getDueStatus(task.dueDate, task.status);
+
+  const updateStatus = async (newStatus: ITask['status']) => {
+    if (newStatus === currentStatus || statusUpdating) return;
+    setStatusUpdating(true);
+    const prev = currentStatus;
+    setCurrentStatus(newStatus);
+    try {
+      await apiClient.put(`/tasks/${task._id}`, { ...task, status: newStatus });
+      toast.success(`Status → ${newStatus.replace('-', ' ')}`);
+    } catch {
+      setCurrentStatus(prev);
+      toast.error('Failed to update status');
+    } finally {
+      setStatusUpdating(false);
+    }
+  };
 
   const togglePayment = async () => {
     const next = task.paymentStatus === 'paid' ? 'pending' : 'paid';
@@ -85,15 +103,34 @@ export default function TaskDetail({
               <span className={cn('badge text-[11px] uppercase tracking-wide', getPriorityColor(task.priority))}>
                 {task.priority}
               </span>
-              <span className={cn('badge text-[11px]', getStatusColor(task.status))}>
-                {task.status.replace('-', ' ')}
-              </span>
               <span className={cn('badge text-[11px]', getSourceColor(task.source))}>
                 {task.source}
               </span>
               {!task.isBillable && (
                 <Badge variant="default">non-billable</Badge>
               )}
+            </div>
+            {/* Quick status switcher */}
+            <div className="flex gap-1.5 mb-3">
+              {(['todo', 'in-progress', 'done'] as ITask['status'][]).map((s) => (
+                <button
+                  key={s}
+                  onClick={() => updateStatus(s)}
+                  disabled={statusUpdating}
+                  className={cn(
+                    'px-3 py-1 rounded-lg text-xs font-medium transition-all border',
+                    currentStatus === s
+                      ? s === 'done'
+                        ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400'
+                        : s === 'in-progress'
+                        ? 'bg-violet-500/20 border-violet-500/40 text-violet-400'
+                        : 'bg-slate-500/20 border-slate-500/40 text-slate-300'
+                      : 'bg-white/[0.03] border-white/[0.06] text-slate-500 hover:text-slate-300 hover:border-white/[0.12]'
+                  )}
+                >
+                  {s === 'in-progress' ? 'In Progress' : s === 'todo' ? 'To Do' : 'Done'}
+                </button>
+              ))}
             </div>
             <h1 className="text-xl font-bold text-white">{task.title}</h1>
             {task.description && (

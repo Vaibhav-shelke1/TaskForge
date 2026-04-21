@@ -47,9 +47,10 @@ export function getBudgetPercentage(logged: number, budget: number): number {
 
 export type BudgetStatus = 'safe' | 'warning' | 'exceeded';
 
-export function getBudgetStatus(logged: number, budget: number): BudgetStatus {
+export function getBudgetStatus(logged: number, budget: number, taskStatus?: string): BudgetStatus {
+  if (taskStatus === 'done') return 'safe';
   const pct = getBudgetPercentage(logged, budget);
-  if (pct >= 100) return 'exceeded';
+  if (pct > 100) return 'exceeded';
   if (pct >= 80) return 'warning';
   return 'safe';
 }

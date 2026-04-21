@@ -75,8 +75,8 @@ export default function TimeLogForm({
 
       if (res.data.success) {
         toast.success(`${h}h logged successfully`);
-        onSuccess();
         onClose();
+        try { onSuccess(); } catch { /* ignore refresh errors */ }
       }
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;

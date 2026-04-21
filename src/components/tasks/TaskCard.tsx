@@ -1,34 +1,73 @@
 'use client';
 
-import Link from 'next/link';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Clock, AlertTriangle, Tag, ExternalLink, CheckCircle2, CircleDollarSign, CalendarClock,
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { ITask } from '@/types';
+import apiClient from '@/lib/apiClient';
+import { useAuthStore } from '@/store/authStore';
 import {
   cn, formatDate, formatHours,
   getBudgetPercentage, getBudgetStatus, getBudgetBarColor,
   getPriorityColor, getStatusColor, getSourceColor,
   getDueStatus, getDueBadgeStyle, formatDueLabel,
 } from '@/lib/utils';
-import Badge from '../ui/Badge';
 
 interface TaskCardProps {
   task: ITask;
   showClient?: boolean;
+  onStatusChange?: (taskId: string, newStatus: ITask['status']) => void;
 }
 
-export default function TaskCard({ task, showClient = false }: TaskCardProps) {
+const STATUS_CYCLE: Record<ITask['status'], ITask['status']> = {
+  'todo': 'in-progress',
+  'in-progress': 'done',
+  'done': 'todo',
+};
+
+const STATUS_OPTIONS: { value: ITask['status']; label: string }[] = [
+  { value: 'todo', label: 'To Do' },
+  { value: 'in-progress', label: 'In Progress' },
+  { value: 'done', label: 'Done' },
+];
+
+export default function TaskCard({ task, showClient = false, onStatusChange }: TaskCardProps) {
+  const router = useRouter();
+  const { user } = useAuthStore();
+  const [status, setStatus] = useState<ITask['status']>(task.status);
+  const [updating, setUpdating] = useState(false);
+
   const budgetPct = getBudgetPercentage(task.totalLoggedHours, task.budgetHours);
-  const budgetStatus = getBudgetStatus(task.totalLoggedHours, task.budgetHours);
+  const budgetStatus = getBudgetStatus(task.totalLoggedHours, task.budgetHours, status);
   const client = typeof task.clientId === 'object' ? task.clientId : null;
   const dueStatus = getDueStatus(task.dueDate, task.status);
 
+  const handleStatusChange = async (e: React.MouseEvent, newStatus: ITask['status']) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (newStatus === status || updating) return;
+    setUpdating(true);
+    const prev = status;
+    setStatus(newStatus);
+    try {
+      await apiClient.put(`/tasks/${task._id}`, { ...task, status: newStatus });
+      onStatusChange?.(task._id, newStatus);
+    } catch {
+      setStatus(prev);
+      toast.error('Failed to update status');
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   return (
-    <Link
-      href={`/tasks/${task._id}`}
+    <div
+      onClick={() => router.push(`/tasks/${task._id}`)}
       className={cn(
-        'block bg-white/[0.04] border rounded-2xl p-5 transition-all duration-200',
+        'block bg-white/[0.04] border rounded-2xl p-5 transition-all duration-200 cursor-pointer',
         'hover:bg-white/[0.07] hover:border-white/[0.14] hover:-translate-y-0.5',
         budgetStatus === 'exceeded'
           ? 'border-red-500/30'
@@ -44,8 +83,9 @@ export default function TaskCard({ task, showClient = false }: TaskCardProps) {
             <span className={cn('badge text-[10px] uppercase tracking-wider', getPriorityColor(task.priority))}>
               {task.priority}
             </span>
-            <span className={cn('badge text-[10px]', getStatusColor(task.status))}>
-              {task.status.replace('-', ' ')}
+            {/* Status badge — always visible so clients can see task state */}
+            <span className={cn('badge text-[10px]', getStatusColor(status))}>
+              {status.replace('-', ' ')}
             </span>
             <span className={cn('badge text-[10px]', getSourceColor(task.source))}>
               {task.source}
@@ -74,6 +114,31 @@ export default function TaskCard({ task, showClient = false }: TaskCardProps) {
         <p className="text-xs text-slate-500 mb-3 line-clamp-2 leading-relaxed">
           {task.description}
         </p>
+      )}
+
+      {/* Quick Status Buttons */}
+      {user?.role === 'developer' && (
+        <div className="flex gap-1.5 mb-3" onClick={(e) => e.stopPropagation()}>
+          {STATUS_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              onClick={(e) => handleStatusChange(e, opt.value)}
+              disabled={updating}
+              className={cn(
+                'flex-1 py-1 rounded-lg text-[10px] font-medium transition-all border',
+                status === opt.value
+                  ? opt.value === 'done'
+                    ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400'
+                    : opt.value === 'in-progress'
+                    ? 'bg-violet-500/20 border-violet-500/40 text-violet-400'
+                    : 'bg-slate-500/20 border-slate-500/40 text-slate-300'
+                  : 'bg-white/[0.03] border-white/[0.06] text-slate-600 hover:text-slate-400 hover:border-white/[0.12]'
+              )}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
       )}
 
       {/* Budget Progress */}
@@ -133,7 +198,7 @@ export default function TaskCard({ task, showClient = false }: TaskCardProps) {
               </span>
             ) : (
               <span className="inline-flex items-center gap-1 text-[10px] font-medium text-amber-400 bg-amber-400/10 border border-amber-400/20 rounded-full px-2 py-0.5">
-                <CircleDollarSign className="w-2.5 h-2.5" /> Pending
+                <CircleDollarSign className="w-2.5 h-2.5" /> Payment Pending
               </span>
             )
           )}
@@ -151,6 +216,6 @@ export default function TaskCard({ task, showClient = false }: TaskCardProps) {
           </div>
         )}
       </div>
-    </Link>
+    </div>
   );
 }
