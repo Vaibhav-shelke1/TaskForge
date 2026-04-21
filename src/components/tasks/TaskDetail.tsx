@@ -41,7 +41,7 @@ export default function TaskDetail({
   const [statusUpdating, setStatusUpdating] = useState(false);
 
   const budgetPct = getBudgetPercentage(task.totalLoggedHours, task.budgetHours);
-  const budgetStatus = getBudgetStatus(task.totalLoggedHours, task.budgetHours);
+  const budgetStatus = getBudgetStatus(task.totalLoggedHours, task.budgetHours, task.status);
   const client = typeof task.clientId === 'object' ? task.clientId : null;
   const dueStatus = getDueStatus(task.dueDate, task.status);
 

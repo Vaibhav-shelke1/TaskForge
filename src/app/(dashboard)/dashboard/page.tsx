@@ -52,7 +52,7 @@ export default function DashboardPage() {
   useEffect(() => { fetchData(); }, []);
 
   const recentTasks = tasks.slice(0, 6);
-  const overBudgetTasks = tasks.filter((t) => getBudgetStatus(t.totalLoggedHours, t.budgetHours) === 'exceeded');
+  const overBudgetTasks = tasks.filter((t) => getBudgetStatus(t.totalLoggedHours, t.budgetHours, t.status) === 'exceeded');
   const urgentTasks = tasks.filter((t) => {
     const s = getDueStatus(t.dueDate, t.status);
     return s === 'overdue' || s === 'today' || s === 'soon';
