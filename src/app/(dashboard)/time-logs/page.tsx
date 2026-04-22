@@ -1,8 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { Plus, Clock, Trash2 } from 'lucide-react';
-import toast from 'react-hot-toast';
+import { Plus, Clock, Trash2, Pencil } from 'lucide-react';
 import { ITimeLog, ITask } from '@/types';
 import apiClient from '@/lib/apiClient';
 import { formatDate, formatHours } from '@/lib/utils';
@@ -10,14 +9,18 @@ import TimeLogForm from '@/components/time/TimeLogForm';
 import Timer from '@/components/time/Timer';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
+import ConfirmDialog from '@/components/ui/ConfirmDialog';
 import { PageLoader } from '@/components/ui/LoadingSpinner';
+import toast from 'react-hot-toast';
 
 export default function TimeLogsPage() {
   const [logs, setLogs] = useState<ITimeLog[]>([]);
   const [tasks, setTasks] = useState<ITask[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [editingLog, setEditingLog] = useState<ITimeLog | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const fetchLogs = useCallback(async () => {
     try {
@@ -34,12 +37,14 @@ export default function TimeLogsPage() {
 
   useEffect(() => { fetchLogs(); }, [fetchLogs]);
 
-  const deleteLog = async (id: string) => {
-    setDeletingId(id);
+  const deleteLog = async () => {
+    if (!confirmDeleteId) return;
+    setDeletingId(confirmDeleteId);
     try {
-      await apiClient.delete(`/time-logs/${id}`);
-      setLogs((prev) => prev.filter((l) => l._id !== id));
+      await apiClient.delete(`/time-logs/${confirmDeleteId}`);
+      setLogs((prev) => prev.filter((l) => l._id !== confirmDeleteId));
       toast.success('Time log deleted');
+      setConfirmDeleteId(null);
     } catch {
       toast.error('Failed to delete');
     } finally {
@@ -89,14 +94,15 @@ export default function TimeLogsPage() {
                   key={log._id}
                   className="flex items-start gap-4 p-4 bg-white/[0.04] border border-white/[0.08] rounded-2xl hover:bg-white/[0.06] transition-colors group"
                 >
-                  <div className="w-12 h-12 rounded-xl bg-indigo-600/10 border border-indigo-500/20 flex flex-col items-center justify-center flex-shrink-0">
-                    <span className="text-sm font-bold text-indigo-300">{log.hours}</span>
-                    <span className="text-[9px] text-indigo-400/70 uppercase">hrs</span>
+                  {/* Hours badge */}
+                  <div className="w-12 h-12 rounded-xl bg-violet-600/10 border border-violet-500/20 flex flex-col items-center justify-center flex-shrink-0">
+                    <span className="text-sm font-bold text-violet-300">{log.hours}</span>
+                    <span className="text-[9px] text-violet-400/70 uppercase">hrs</span>
                   </div>
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
-                      <div>
+                      <div className="min-w-0">
                         <p className="text-sm font-medium text-white truncate">
                           {task?.title ?? 'Unknown Task'}
                         </p>
@@ -107,13 +113,25 @@ export default function TimeLogsPage() {
                         )}
                         <p className="text-xs text-slate-600 mt-1">{formatDate(log.date)}</p>
                       </div>
-                      <button
-                        onClick={() => deleteLog(log._id)}
-                        disabled={deletingId === log._id}
-                        className="p-1.5 text-slate-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all rounded-lg hover:bg-red-400/10"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+
+                      {/* Action buttons — visible on hover */}
+                      <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all flex-shrink-0">
+                        <button
+                          onClick={() => setEditingLog(log)}
+                          className="p-1.5 text-slate-500 hover:text-violet-400 rounded-lg hover:bg-violet-400/10 transition-colors"
+                          title="Edit"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => setConfirmDeleteId(log._id)}
+                          disabled={deletingId === log._id}
+                          className="p-1.5 text-slate-500 hover:text-red-400 rounded-lg hover:bg-red-400/10 transition-colors"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -122,11 +140,10 @@ export default function TimeLogsPage() {
           )}
         </div>
 
-        {/* Timer */}
+        {/* Timer + Summary */}
         <div>
           <Timer tasks={tasks} onLogComplete={fetchLogs} />
 
-          {/* Summary */}
           <Card className="mt-4">
             <h3 className="text-sm font-semibold text-white mb-3">Summary</h3>
             <div className="space-y-3">
@@ -152,15 +169,37 @@ export default function TimeLogsPage() {
       {/* FAB */}
       <button
         onClick={() => setShowForm(true)}
-        className="fixed bottom-20 right-4 lg:hidden w-14 h-14 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-xl shadow-indigo-600/30 z-30"
+        className="fixed bottom-20 right-4 lg:hidden w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl z-30"
+        style={{ background: 'linear-gradient(135deg,#7c3aed,#4f46e5)', boxShadow: '0 4px 20px rgba(124,58,237,0.4)' }}
       >
         <Plus className="w-6 h-6 text-white" />
       </button>
 
+      {/* Create form */}
       <TimeLogForm
         isOpen={showForm}
         onClose={() => setShowForm(false)}
         onSuccess={fetchLogs}
+      />
+
+      {/* Edit form */}
+      <TimeLogForm
+        isOpen={!!editingLog}
+        onClose={() => setEditingLog(null)}
+        onSuccess={fetchLogs}
+        editLog={editingLog ?? undefined}
+      />
+
+      {/* Delete confirmation */}
+      <ConfirmDialog
+        isOpen={!!confirmDeleteId}
+        onClose={() => setConfirmDeleteId(null)}
+        onConfirm={deleteLog}
+        title="Delete Time Log"
+        message="This time log will be permanently deleted. This action cannot be undone."
+        confirmLabel="Delete"
+        danger
+        loading={!!deletingId}
       />
     </div>
   );
