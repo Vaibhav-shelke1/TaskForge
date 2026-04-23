@@ -28,8 +28,8 @@ export default function BottomNav() {
   const navItems = user?.role === 'developer' ? developerNav : clientNav;
 
   return (
-    <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 border-t border-white/[0.06]"
-      style={{ background: 'rgba(6,8,26,0.95)', backdropFilter: 'blur(12px)' }}>
+    <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 border-t"
+      style={{ background: 'var(--th-nav)', backdropFilter: 'blur(12px)', borderColor: 'var(--th-sidebar-border)' }}>
       <div className="flex items-center justify-around px-2 py-2">
         {navItems.map(({ href, icon: Icon, label }) => {
           const isActive = pathname === href || (href !== '/dashboard' && pathname.startsWith(href));

@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Toaster } from 'react-hot-toast';
+import ThemeProvider from '@/components/layout/ThemeProvider';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -11,23 +11,19 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="dark">
-      <body className="antialiased">
-        {children}
-        <Toaster
-          position="top-right"
-          toastOptions={{
-            style: {
-              background: '#13162a',
-              color: '#f1f5f9',
-              border: '1px solid rgba(124,58,237,0.2)',
-              borderRadius: '12px',
-              fontSize: '14px',
-            },
-            success: { iconTheme: { primary: '#10b981', secondary: '#06081a' } },
-            error: { iconTheme: { primary: '#ef4444', secondary: '#06081a' } },
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Apply saved theme before first paint to prevent flash */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var s=localStorage.getItem('trackforge-theme');var t=s?JSON.parse(s).state?.theme:'dark';document.documentElement.classList.add(t||'dark')}catch(e){document.documentElement.classList.add('dark')}})()`,
           }}
         />
+      </head>
+      <body className="antialiased">
+        <ThemeProvider>
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );

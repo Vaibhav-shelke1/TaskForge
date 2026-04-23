@@ -8,6 +8,7 @@ import {
 import { cn, getInitials } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import AppLogo from '@/components/ui/AppLogo';
+import ThemeToggle from '@/components/ui/ThemeToggle';
 
 const developerNav = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -32,14 +33,15 @@ export default function Sidebar() {
   const navItems = user?.role === 'developer' ? developerNav : clientNav;
 
   return (
-    <aside className="hidden lg:flex flex-col w-64 h-screen fixed left-0 top-0 border-r border-white/[0.06] z-40"
-      style={{ background: 'linear-gradient(180deg, #080b1e 0%, #06081a 100%)' }}>
+    <aside className="hidden lg:flex flex-col w-64 h-screen fixed left-0 top-0 border-r z-40"
+      style={{ background: 'var(--th-sidebar)', borderColor: 'var(--th-sidebar-border)' }}>
       {/* Logo */}
-      <div className="px-5 py-5 border-b border-white/[0.06]">
+      <div className="px-5 py-5 border-b flex items-center justify-between" style={{ borderColor: 'var(--th-sidebar-border)' }}>
         <AppLogo
           size="sm"
           subtitle={user?.role === 'developer' ? 'Developer Portal' : 'Client Portal'}
         />
+        <ThemeToggle />
       </div>
 
       {/* Navigation */}
@@ -65,7 +67,7 @@ export default function Sidebar() {
       </nav>
 
       {/* User Info */}
-      <div className="px-3 pb-4 border-t border-white/[0.05] pt-3">
+      <div className="px-3 pb-4 border-t pt-3" style={{ borderColor: 'var(--th-sidebar-border)' }}>
         <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/[0.03] border border-white/[0.05]">
           <div
             className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"

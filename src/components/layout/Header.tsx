@@ -4,16 +4,18 @@ import { Bell } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { getInitials } from '@/lib/utils';
 import AppLogo from '@/components/ui/AppLogo';
+import ThemeToggle from '@/components/ui/ThemeToggle';
 
 export default function Header() {
   const { user } = useAuthStore();
 
   return (
-    <header className="lg:hidden sticky top-0 z-30 border-b border-white/[0.06] px-4 py-3"
-      style={{ background: 'rgba(6,8,26,0.85)', backdropFilter: 'blur(12px)' }}>
+    <header className="lg:hidden sticky top-0 z-30 border-b px-4 py-3"
+      style={{ background: 'var(--th-header)', backdropFilter: 'blur(12px)', borderColor: 'var(--th-sidebar-border)' }}>
       <div className="flex items-center justify-between">
         <AppLogo size="sm" showText={true} />
         <div className="flex items-center gap-2">
+          <ThemeToggle />
           <button className="p-2 text-slate-400 hover:text-white hover:bg-white/[0.06] rounded-lg transition-colors">
             <Bell className="w-4 h-4" />
           </button>
