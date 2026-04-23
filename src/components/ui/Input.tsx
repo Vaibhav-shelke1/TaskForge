@@ -17,7 +17,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
     return (
       <div className="w-full">
         {label && (
-          <label htmlFor={inputId} className="block text-sm font-medium text-slate-400 mb-1.5">
+          <label htmlFor={inputId} className="block text-sm font-medium mb-1.5" style={{ color: 'var(--th-text-2)' }}>
             {label}
           </label>
         )}
@@ -31,15 +31,19 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             id={inputId}
             className={cn(
-              'w-full bg-white/[0.04] border rounded-xl px-4 py-2.5 text-sm text-white',
-              'placeholder-slate-500 transition-all duration-200',
+              'w-full rounded-xl px-4 py-2.5 text-sm placeholder-slate-500 transition-all duration-200',
               'focus:outline-none focus:ring-1',
               error
-                ? 'border-red-500/50 focus:border-red-500 focus:ring-red-500/20'
-                : 'border-white/10 focus:border-indigo-500 focus:ring-indigo-500/20',
+                ? 'border border-red-500/50 focus:border-red-500 focus:ring-red-500/20'
+                : 'border focus:border-violet-600 focus:ring-violet-600/20',
               icon && 'pl-10',
               className
             )}
+            style={{
+              backgroundColor: 'var(--th-input-bg)',
+              borderColor: error ? undefined : 'var(--th-input-border)',
+              color: 'var(--th-input-text)',
+            }}
             {...props}
           />
         </div>

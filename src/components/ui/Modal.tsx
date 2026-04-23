@@ -46,14 +46,14 @@ export default function Modal({ isOpen, onClose, title, children, size = 'md' }:
       <div className="flex min-h-full items-center justify-center p-4">
         <div
           className={cn(
-            'relative w-full my-4 bg-[#0d1224] border border-white/10 rounded-2xl shadow-2xl',
-            'animate-slide-up',
+            'relative w-full my-4 rounded-2xl shadow-2xl border animate-slide-up',
             sizes[size]
           )}
+          style={{ background: 'var(--th-modal)', borderColor: 'var(--th-border-md)' }}
         >
           {title && (
-            <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06]">
-              <h2 className="text-lg font-semibold text-white">{title}</h2>
+            <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: 'var(--th-border)' }}>
+              <h2 className="text-lg font-semibold" style={{ color: 'var(--th-text-1)' }}>{title}</h2>
               <button
                 onClick={onClose}
                 className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.06] transition-colors"
