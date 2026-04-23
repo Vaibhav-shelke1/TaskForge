@@ -68,162 +68,182 @@ export default function ReportGenerator({ clients }: ReportGeneratorProps) {
       const { default: autoTable } = await import('jspdf-autotable');
 
       const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-      const pw = doc.internal.pageSize.getWidth();
-      const ph = doc.internal.pageSize.getHeight();
+      const pw = doc.internal.pageSize.getWidth();   // 210
+      const ph = doc.internal.pageSize.getHeight();  // 297
 
-      // ── HEADER BAND ──────────────────────────────────────────────────────
-      // Violet → indigo gradient simulation (two rects blended)
-      doc.setFillColor(109, 40, 217);   // violet-700
-      doc.rect(0, 0, pw, 52, 'F');
-      doc.setFillColor(79, 70, 229);    // indigo-600 overlay right side
-      doc.rect(pw * 0.5, 0, pw * 0.5, 52, 'F');
+      // ── colour palette (solid only — jsPDF has no transparency) ──────────
+      const C = {
+        ink:      [15,  23,  42]  as [number,number,number],  // slate-900
+        muted:    [100, 116, 139] as [number,number,number],  // slate-500
+        border:   [226, 232, 240] as [number,number,number],  // slate-200
+        surface:  [248, 250, 252] as [number,number,number],  // slate-50
+        white:    [255, 255, 255] as [number,number,number],
+        violet:   [109,  40, 217] as [number,number,number],  // violet-700
+        indigo:   [ 79,  70, 229] as [number,number,number],  // indigo-600
+        emerald:  [ 5,  150, 105] as [number,number,number],  // emerald-600
+        amber:    [217, 119,   6] as [number,number,number],  // amber-600
+        red:      [220,  38,  38] as [number,number,number],  // red-600
+        redSurf:  [254, 242, 242] as [number,number,number],  // red-50
+        violSurf: [245, 243, 255] as [number,number,number],  // violet-50
+      };
 
-      // Decorative circle (top-right)
-      doc.setFillColor(255, 255, 255, 0.05);
-      doc.circle(pw - 10, -10, 40, 'F');
+      const bold   = () => doc.setFont('helvetica', 'bold');
+      const normal = () => doc.setFont('helvetica', 'normal');
+      const color  = (c: [number,number,number]) => doc.setTextColor(...c);
+      const fill   = (c: [number,number,number]) => doc.setFillColor(...c);
+      const stroke = (c: [number,number,number]) => doc.setDrawColor(...c);
 
-      // Logo mark — small square with "TF"
-      doc.setFillColor(255, 255, 255);
-      doc.roundedRect(14, 12, 16, 16, 3, 3, 'F');
-      doc.setTextColor(79, 70, 229);
+      // ── HEADER ────────────────────────────────────────────────────────────
+      //  Dark navy band, full width
+      fill(C.ink);
+      doc.rect(0, 0, pw, 42, 'F');
+
+      //  Violet left accent stripe
+      fill(C.violet);
+      doc.rect(0, 0, 5, 42, 'F');
+
+      //  "WORKLOGS" large title
+      color(C.white);
+      bold();
+      doc.setFontSize(26);
+      doc.text('WORKLOGS', 14, 22);
+
+      //  Subtitle
+      normal();
       doc.setFontSize(9);
-      doc.setFont('helvetica', 'bold');
-      doc.text('TF', 22, 23, { align: 'center' });
+      color([180, 185, 200] as unknown as [number,number,number]);
+      doc.text('Time & Work Report  ·  TrackForge', 14, 31);
 
-      // "Worklogs" title
-      doc.setTextColor(255, 255, 255);
-      doc.setFontSize(24);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Worklogs', 35, 24);
-
-      // Subtitle
-      doc.setFontSize(9);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(200, 200, 255);
-      doc.text('TrackForge  •  Time & Work Report', 35, 32);
-
-      // Period badge (right side)
-      doc.setFillColor(255, 255, 255, 0.15);
-      doc.roundedRect(pw - 80, 14, 66, 18, 4, 4, 'F');
-      doc.setTextColor(255, 255, 255);
+      //  Period pill (right)
+      const period = `${formatDate(report.dateRange.from)}  –  ${formatDate(report.dateRange.to)}`;
+      fill(C.violet);
+      doc.roundedRect(pw - 75, 13, 62, 16, 3, 3, 'F');
+      color(C.white);
+      bold();
       doc.setFontSize(7.5);
-      doc.setFont('helvetica', 'bold');
-      doc.text('PERIOD', pw - 47, 21, { align: 'center' });
-      doc.setFontSize(8);
-      doc.setFont('helvetica', 'normal');
+      doc.text('REPORT PERIOD', pw - 44, 20, { align: 'center' });
+      normal();
+      doc.setFontSize(7.5);
+      doc.text(period, pw - 44, 26, { align: 'center' });
+
+      let y = 52;
+
+      // ── PARTIES ROW ───────────────────────────────────────────────────────
+      const halfW = (pw - 28 - 4) / 2;
+      const boxH  = 28;
+
+      // Developer box
+      fill(C.surface);
+      stroke(C.border);
+      doc.setLineWidth(0.3);
+      doc.roundedRect(14, y, halfW, boxH, 2, 2, 'FD');
+      fill(C.violet);
+      doc.roundedRect(14, y, 3, boxH, 1, 1, 'F');
+      color(C.muted); bold(); doc.setFontSize(7);
+      doc.text('FROM / DEVELOPER', 21, y + 8);
+      color(C.ink); bold(); doc.setFontSize(9.5);
+      doc.text(report.developer?.name ?? '', 21, y + 16);
+      color(C.muted); normal(); doc.setFontSize(8);
+      doc.text(report.developer?.email ?? '', 21, y + 22);
+
+      // Client box
+      const cx2 = 14 + halfW + 4;
+      fill(C.surface);
+      stroke(C.border);
+      doc.roundedRect(cx2, y, halfW, boxH, 2, 2, 'FD');
+      fill(C.indigo);
+      doc.roundedRect(cx2, y, 3, boxH, 1, 1, 'F');
+      color(C.muted); bold(); doc.setFontSize(7);
+      doc.text('TO / CLIENT', cx2 + 7, y + 8);
+      color(C.ink); bold(); doc.setFontSize(9.5);
+      doc.text(report.client?.name ?? 'All Clients', cx2 + 7, y + 16);
+      color(C.muted); normal(); doc.setFontSize(8);
       doc.text(
-        `${formatDate(report.dateRange.from)} – ${formatDate(report.dateRange.to)}`,
-        pw - 47, 28, { align: 'center' }
+        report.client?.company
+          ? `${report.client.company}  ·  ${report.client.email ?? ''}`
+          : report.client?.email ?? '',
+        cx2 + 7, y + 22
       );
 
-      let y = 62;
+      y += boxH + 8;
 
-      // ── CLIENT / DEVELOPER META ──────────────────────────────────────────
-      const metaBoxH = report.client ? 26 : 16;
-      doc.setFillColor(248, 248, 252);
-      doc.roundedRect(14, y, pw - 28, metaBoxH, 3, 3, 'F');
-      doc.setFillColor(109, 40, 217);
-      doc.roundedRect(14, y, 3, metaBoxH, 1, 1, 'F');
+      // ── SUMMARY STRIP ─────────────────────────────────────────────────────
+      fill(C.ink);
+      doc.rect(14, y, pw - 28, 26, 'F');
 
-      doc.setFontSize(8);
-      doc.setTextColor(100, 100, 130);
-      doc.setFont('helvetica', 'bold');
-      doc.text('DEVELOPER', 22, y + 7);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(30, 30, 50);
-      doc.text(`${report.developer?.name ?? ''}  <${report.developer?.email ?? ''}>`, 22, y + 13);
-
-      if (report.client) {
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(100, 100, 130);
-        doc.text('CLIENT', pw / 2, y + 7);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(30, 30, 50);
-        doc.text(
-          `${report.client.name}${report.client.company ? `  •  ${report.client.company}` : ''}`,
-          pw / 2, y + 13
-        );
-        doc.setTextColor(120);
-        doc.text(report.client.email ?? '', pw / 2, y + 19);
-      }
-
-      y += metaBoxH + 10;
-
-      // ── SUMMARY CARDS ────────────────────────────────────────────────────
-      const cards = [
-        { label: 'Total Hours', value: formatHours(report.summary.totalHours), color: [109, 40, 217] as [number,number,number] },
-        { label: 'Tasks Worked', value: String(report.summary.totalTasks), color: [79, 70, 229] as [number,number,number] },
-        { label: 'Billable', value: formatHours(report.summary.billableHours), color: [16, 185, 129] as [number,number,number] },
-        { label: 'Non-Billable', value: formatHours(report.summary.nonBillableHours), color: [100, 116, 139] as [number,number,number] },
+      const sumItems = [
+        { label: 'TOTAL HOURS',  value: formatHours(report.summary.totalHours),    col: C.violet },
+        { label: 'TASKS WORKED', value: String(report.summary.totalTasks),          col: C.white },
+        { label: 'BILLABLE',     value: formatHours(report.summary.billableHours),  col: C.emerald },
+        { label: 'NON-BILLABLE', value: formatHours(report.summary.nonBillableHours), col: C.muted },
       ];
-      const cardW = (pw - 28 - 9) / 4;
-      cards.forEach((card, i) => {
-        const cx = 14 + i * (cardW + 3);
-        doc.setFillColor(248, 248, 252);
-        doc.roundedRect(cx, y, cardW, 22, 2, 2, 'F');
-        doc.setFillColor(...card.color);
-        doc.roundedRect(cx, y + 18, cardW, 4, 1, 1, 'F');
-        doc.setFontSize(13);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(...card.color);
-        doc.text(card.value, cx + cardW / 2, y + 12, { align: 'center' });
-        doc.setFontSize(7);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(120);
-        doc.text(card.label, cx + cardW / 2, y + 17.5, { align: 'center' });
+      const colW = (pw - 28) / 4;
+      sumItems.forEach((item, i) => {
+        const sx = 14 + i * colW;
+        if (i > 0) {
+          // vertical divider
+          fill([35, 45, 65] as unknown as [number,number,number]);
+          doc.rect(sx, y + 4, 0.3, 18, 'F');
+        }
+        bold(); doc.setFontSize(12);
+        color(item.col);
+        doc.text(item.value, sx + colW / 2, y + 14, { align: 'center' });
+        normal(); doc.setFontSize(6.5);
+        color(C.muted);
+        doc.text(item.label, sx + colW / 2, y + 21, { align: 'center' });
       });
-      y += 32;
 
-      // ── TASK SECTIONS ────────────────────────────────────────────────────
+      y += 34;
+
+      // ── TASK SECTIONS ─────────────────────────────────────────────────────
       for (const entry of report.tasks) {
         const task = entry.task;
-        const pct = getBudgetPercentage(entry.totalHours, task.budgetHours);
+        const pct   = getBudgetPercentage(entry.totalHours, task.budgetHours);
         const isOver = entry.totalHours > task.budgetHours;
+        const accentCol: [number,number,number] = isOver ? C.red : C.violet;
+        const surfCol:   [number,number,number] = isOver ? C.redSurf : C.violSurf;
 
-        // Page break if needed
-        if (y > ph - 60) { doc.addPage(); y = 20; }
+        if (y > ph - 65) { doc.addPage(); y = 18; }
 
-        // Task header strip
-        doc.setFillColor(isOver ? 254 : 245, isOver ? 242 : 243, isOver ? 242 : 255);
-        doc.roundedRect(14, y, pw - 28, 20, 2, 2, 'F');
-        // Left accent bar
-        doc.setFillColor(isOver ? 239 : 109, isOver ? 68 : 40, isOver ? 68 : 217);
-        doc.roundedRect(14, y, 3, 20, 1, 1, 'F');
+        // Task header row
+        fill(surfCol);
+        stroke(C.border);
+        doc.setLineWidth(0.3);
+        doc.rect(14, y, pw - 28, 18, 'FD');
+        fill(accentCol);
+        doc.rect(14, y, 4, 18, 'F');
 
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(isOver ? 185 : 30, isOver ? 28 : 28, isOver ? 28 : 50);
-        const titleMaxWidth = pw - 28 - 50;
-        const titleText = doc.splitTextToSize(task.title, titleMaxWidth)[0];
-        doc.text(titleText, 21, y + 8);
+        // Task title
+        const titleStr = doc.splitTextToSize(task.title, pw - 28 - 55)[0] as string;
+        bold(); doc.setFontSize(9.5);
+        color(C.ink);
+        doc.text(titleStr, 22, y + 7);
 
-        // Hours badge (right)
-        doc.setFillColor(isOver ? 239 : 109, isOver ? 68 : 40, isOver ? 68 : 217);
-        doc.roundedRect(pw - 50, y + 3, 36, 14, 3, 3, 'F');
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(255, 255, 255);
-        doc.text(formatHours(entry.totalHours), pw - 32, y + 12, { align: 'center' });
+        // Budget meta
+        normal(); doc.setFontSize(7.5);
+        color(C.muted);
+        doc.text(
+          `Budget ${formatHours(task.budgetHours)}  ·  Logged ${formatHours(entry.totalHours)}  ·  ${pct}%${isOver ? '  ⚠ over budget' : ''}`,
+          22, y + 14
+        );
 
-        // Budget info
-        doc.setFontSize(7.5);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(120);
-        const budgetText = `Budget: ${formatHours(task.budgetHours)}  |  Logged: ${formatHours(entry.totalHours)}  |  ${pct}%${isOver ? '  ⚠ Over budget' : ''}`;
-        doc.text(budgetText, 21, y + 16);
+        // Hours pill (right)
+        fill(accentCol);
+        doc.roundedRect(pw - 46, y + 3, 32, 12, 2, 2, 'F');
+        bold(); doc.setFontSize(9); color(C.white);
+        doc.text(formatHours(entry.totalHours), pw - 30, y + 11, { align: 'center' });
 
-        y += 24;
+        y += 20;
 
         // Progress bar
-        doc.setFillColor(230, 230, 240);
-        doc.roundedRect(14, y, pw - 28, 3, 1, 1, 'F');
-        const barColor: [number, number, number] = isOver ? [239, 68, 68] : pct >= 80 ? [245, 158, 11] : [109, 40, 217];
-        doc.setFillColor(...barColor);
-        doc.roundedRect(14, y, (pw - 28) * Math.min(pct / 100, 1), 3, 1, 1, 'F');
-        y += 7;
+        fill(C.border);
+        doc.rect(14, y, pw - 28, 2.5, 'F');
+        fill(accentCol);
+        doc.rect(14, y, (pw - 28) * Math.min(pct / 100, 1), 2.5, 'F');
+        y += 6;
 
         // Logs table
-        const tableData = entry.logs.map((l) => [
+        const tableRows = entry.logs.map((l) => [
           formatDate(l.date),
           formatHours(l.hours),
           typeof l.developerId === 'object' ? (l.developerId as { name: string }).name : '',
@@ -233,68 +253,61 @@ export default function ReportGenerator({ clients }: ReportGeneratorProps) {
         autoTable(doc, {
           startY: y,
           head: [['Date', 'Hours', 'Developer', 'Work Description']],
-          body: tableData,
-          theme: 'plain',
+          body: tableRows,
+          theme: 'grid',
           headStyles: {
-            fillColor: [109, 40, 217],
-            textColor: [255, 255, 255],
+            fillColor: C.ink,
+            textColor: C.white,
             fontSize: 8,
             fontStyle: 'bold',
-            cellPadding: { top: 3, bottom: 3, left: 4, right: 4 },
+            cellPadding: { top: 3.5, bottom: 3.5, left: 4, right: 4 },
           },
           bodyStyles: {
             fontSize: 8,
-            textColor: [50, 50, 70],
+            textColor: C.ink,
             cellPadding: { top: 3, bottom: 3, left: 4, right: 4 },
           },
-          alternateRowStyles: { fillColor: [248, 248, 252] },
+          alternateRowStyles: { fillColor: C.surface },
           columnStyles: {
             0: { cellWidth: 28 },
-            1: { cellWidth: 18, halign: 'center' },
+            1: { cellWidth: 18, halign: 'center', fontStyle: 'bold' },
             2: { cellWidth: 38 },
             3: { cellWidth: 'auto' },
           },
           margin: { left: 14, right: 14 },
-          tableLineColor: [220, 220, 235],
-          tableLineWidth: 0.1,
+          tableLineColor: C.border,
+          tableLineWidth: 0.25,
         });
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        y = (doc as any).lastAutoTable.finalY + 12;
+        y = (doc as any).lastAutoTable.finalY + 10;
       }
 
       if (report.tasks.length === 0) {
-        doc.setFontSize(10);
-        doc.setTextColor(150);
+        color(C.muted); normal(); doc.setFontSize(10);
         doc.text('No time logs found for the selected period.', pw / 2, y + 20, { align: 'center' });
       }
 
-      // ── FOOTER ───────────────────────────────────────────────────────────
+      // ── FOOTER on every page ──────────────────────────────────────────────
       const totalPages = doc.internal.pages.length - 1;
       for (let i = 1; i <= totalPages; i++) {
         doc.setPage(i);
-        // Footer bar
-        doc.setFillColor(245, 245, 250);
-        doc.rect(0, ph - 14, pw, 14, 'F');
-        doc.setFontSize(7.5);
-        doc.setTextColor(150);
-        doc.setFont('helvetica', 'normal');
-        doc.text('Generated by TrackForge', 14, ph - 5.5);
+        // thin top rule
+        fill(C.border);
+        doc.rect(0, ph - 14, pw, 0.4, 'F');
+        // footer text
+        normal(); doc.setFontSize(7.5); color(C.muted);
+        doc.text('Generated by TrackForge', 14, ph - 6);
+        doc.text(`Page ${i} of ${totalPages}`, pw - 14, ph - 6, { align: 'right' });
         doc.text(
-          `Page ${i} of ${totalPages}`,
-          pw - 14, ph - 5.5, { align: 'right' }
-        );
-        doc.setFontSize(7);
-        doc.setTextColor(180);
-        doc.text(
-          `Worklogs  •  ${formatDate(report.dateRange.from)} – ${formatDate(report.dateRange.to)}`,
-          pw / 2, ph - 5.5, { align: 'center' }
+          `Worklogs  ·  ${formatDate(report.dateRange.from)} – ${formatDate(report.dateRange.to)}`,
+          pw / 2, ph - 6, { align: 'center' }
         );
       }
 
-      const clientSlug = report.client?.name?.toLowerCase().replace(/\s+/g, '-') ?? 'all';
-      doc.save(`worklogs-${clientSlug}-${filters.from}-${filters.to}.pdf`);
-      toast.success('Worklogs PDF downloaded!');
+      const slug = report.client?.name?.toLowerCase().replace(/\s+/g, '-') ?? 'all';
+      doc.save(`worklogs-${slug}-${filters.from}-${filters.to}.pdf`);
+      toast.success('PDF downloaded!');
     } catch (err) {
       console.error(err);
       toast.error('Failed to generate PDF');
